@@ -2,9 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
 #include <iostream>
-#include <fstream>
 
 using namespace std;
 
@@ -13,43 +11,102 @@ using namespace std;
 GLuint renderingProgram;
 GLuint vao[numVAOs];
 
-float x = 0.0f;
-float inc = 0.01f;
-
-string readShaderSource(const char *filePath)
+void printShaderLog(GLuint shader)
 {
-    string content;
-    ifstream fileStream(filePath, ios::in);
-    string line = "";
-    while (!fileStream.eof())
+    int len = 0;
+    int chWrittn = 0;
+    char *log;
+    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &len);
+    if (len > 0)
     {
-        getline(fileStream, line);
-        content.append(line + "\n");
+        log = (char *)malloc(len);
+        glGetShaderInfoLog(shader, len, &chWrittn, log);
+        cout << "Shader Info Log: " << log << endl;
+        free(log);
     }
-    fileStream.close();
-    return content;
+}
+
+void printProgramLog(int prog)
+{
+    int len = 0;
+    int chWrittn = 0;
+    char *log;
+    glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &len);
+    if (len > 0)
+    {
+        log = (char *)malloc(len);
+        glGetProgramInfoLog(prog, len, &chWrittn, log);
+        cout << "Program Info Log: " << log << endl;
+        free(log);
+    }
+}
+
+bool checkOpenGLError()
+{
+    bool foundError = false;
+    int glErr = glGetError();
+    while (glErr != GL_NO_ERROR)
+    {
+        cout << "glError: " << glErr << endl;
+        foundError = true;
+        glErr = glGetError();
+    }
+    return foundError;
 }
 
 GLuint createShaderProgram()
 {
+    GLint vertCompiled;
+    GLint fragCompiled;
+    GLint linked;
+
+    const char *vshaderSource =
+        "#version 410 \n"
+        "void main(void) \n"
+        "{ gl_Position = vec4(0.0, 0.0, 0.0, 1.0); }";
+
+    const char *fshaderSource =
+        "#version 410 \n"
+        "out vec4 color; \n"
+        "void main(void) \n"
+        "{ color = vec4(0.0, 0.0, 1.0, 1.0); }";
+
     GLuint vShader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fShader = glCreateShader(GL_FRAGMENT_SHADER);
 
-    string vertShaderStr = readShaderSource("./../vertShader.glsl");
-    string fragShaderStr = readShaderSource("./../fragShader.glsl");
-
-    const char *vertShaderSrc = vertShaderStr.c_str();
-    const char *fragShaderSrc = fragShaderStr.c_str();
-    glShaderSource(vShader, 1, &vertShaderSrc, NULL);
-    glShaderSource(fShader, 1, &fragShaderSrc, NULL);
-
+    glShaderSource(vShader, 1, &vshaderSource, NULL);
+    glShaderSource(fShader, 1, &fshaderSource, NULL);
     glCompileShader(vShader);
-    glCompileShader(fShader);
+    // 捕捉着色器错误
+    glGetShaderiv(vShader, GL_COMPILE_STATUS, &vertCompiled);
+    checkOpenGLError();
+    if (vertCompiled != 1)
+    {
+        cout << "vertex compilation failed" << endl;
+        printShaderLog(vShader);
+    }
 
+    glCompileShader(fShader);
+    checkOpenGLError();
+    glGetShaderiv(fShader, GL_COMPILE_STATUS, &fragCompiled);
+    if (fragCompiled != 1)
+    {
+        cout << "fragment compilation failed" << endl;
+        printShaderLog(fShader);
+    }
+
+    // 捕捉链接着色器时的错误
     GLuint vfProgram = glCreateProgram();
     glAttachShader(vfProgram, vShader);
     glAttachShader(vfProgram, fShader);
     glLinkProgram(vfProgram);
+    checkOpenGLError();
+    glGetProgramiv(vfProgram, GL_LINK_STATUS, &linked);
+    if (linked != 1)
+    {
+        cout << "linking failed" << endl;
+        printProgramLog(vfProgram);
+    }
 
     return vfProgram;
 }
@@ -63,21 +120,10 @@ void init(GLFWwindow *window)
 
 void display(GLFWwindow *window, double currentTime)
 {
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glClearColor(0.0,0.0,0.0,1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
-
     glUseProgram(renderingProgram);
-    x+=inc;
-    if(x>1.0f) inc = -0.01f;
-    if(x<-1.0f) inc = 0.01f;
-
-    GLuint offsetLoc = glGetUniformLocation(renderingProgram, "offset");
-    glProgramUniform1f(renderingProgram, offsetLoc, x);
-
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glPointSize(30.0f);
+    glDrawArrays(GL_POINTS, 0, 1);
 }
-
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 
@@ -91,7 +137,7 @@ int main(int argc, const char *argv[])
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
 #endif
 
-    GLFWwindow *window = glfwCreateWindow(800, 600, "Chapter2 - Program6", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(800, 600, "Chapter2 - Program3", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "fail to create window" << std::endl;

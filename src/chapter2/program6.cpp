@@ -35,7 +35,7 @@ GLuint createShaderProgram()
     GLuint vShader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fShader = glCreateShader(GL_FRAGMENT_SHADER);
 
-    string vertShaderStr = readShaderSource("./../vertShader.glsl");
+    string vertShaderStr = readShaderSource("./../vertShader6.glsl");
     string fragShaderStr = readShaderSource("./../fragShader.glsl");
 
     const char *vertShaderSrc = vertShaderStr.c_str();

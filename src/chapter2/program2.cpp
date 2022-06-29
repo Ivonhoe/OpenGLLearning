@@ -2,47 +2,31 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
 #include <iostream>
-#include <fstream>
-
-using namespace std;
 
 #define numVAOs 1 //新的定义
 
 GLuint renderingProgram;
 GLuint vao[numVAOs];
 
-float x = 0.0f;
-float inc = 0.01f;
-
-string readShaderSource(const char *filePath)
-{
-    string content;
-    ifstream fileStream(filePath, ios::in);
-    string line = "";
-    while (!fileStream.eof())
-    {
-        getline(fileStream, line);
-        content.append(line + "\n");
-    }
-    fileStream.close();
-    return content;
-}
-
 GLuint createShaderProgram()
 {
+    const char *vshaderSource =
+        "#version 410 \n"
+        "void main(void) \n"
+        "{ gl_Position = vec4(0.0, 0.0, 0.0, 1.0); }";
+
+    const char *fshaderSource =
+        "#version 410 \n"
+        "out vec4 color; \n"
+        "void main(void) \n"
+        "{ color = vec4(0.0, 0.0, 1.0, 1.0); }";
+
     GLuint vShader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fShader = glCreateShader(GL_FRAGMENT_SHADER);
 
-    string vertShaderStr = readShaderSource("./../vertShader.glsl");
-    string fragShaderStr = readShaderSource("./../fragShader.glsl");
-
-    const char *vertShaderSrc = vertShaderStr.c_str();
-    const char *fragShaderSrc = fragShaderStr.c_str();
-    glShaderSource(vShader, 1, &vertShaderSrc, NULL);
-    glShaderSource(fShader, 1, &fragShaderSrc, NULL);
-
+    glShaderSource(vShader, 1, &vshaderSource, NULL);
+    glShaderSource(fShader, 1, &fshaderSource, NULL);
     glCompileShader(vShader);
     glCompileShader(fShader);
 
@@ -63,19 +47,9 @@ void init(GLFWwindow *window)
 
 void display(GLFWwindow *window, double currentTime)
 {
-    glClear(GL_DEPTH_BUFFER_BIT);
-    glClearColor(0.0,0.0,0.0,1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
-
     glUseProgram(renderingProgram);
-    x+=inc;
-    if(x>1.0f) inc = -0.01f;
-    if(x<-1.0f) inc = 0.01f;
-
-    GLuint offsetLoc = glGetUniformLocation(renderingProgram, "offset");
-    glProgramUniform1f(renderingProgram, offsetLoc, x);
-
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glPointSize(30.0f);
+    glDrawArrays(GL_POINTS, 0, 1);
 }
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
@@ -84,6 +58,7 @@ void processInput(GLFWwindow *window);
 int main(int argc, const char *argv[])
 {
     glfwInit();
+    // 本机的opengl版本为4.1，这里的opengl版本不能高于4.1
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -91,7 +66,7 @@ int main(int argc, const char *argv[])
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // uncomment this statement to fix compilation on OS X
 #endif
 
-    GLFWwindow *window = glfwCreateWindow(800, 600, "Chapter2 - Program6", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(800, 600, "Chapter2 - Program2", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "fail to create window" << std::endl;
